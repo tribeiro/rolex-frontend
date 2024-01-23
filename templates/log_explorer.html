@@ -1,0 +1,35 @@
+<!-- prettier-ignore -->
+{% extends "base.html" %}
+
+{% block title %}Log Explorer{% endblock %}
+
+{% block content %}
+<nav aria-labelledby="current-page">
+	<form>
+		Select a date to explore: 
+		<input 
+      type="date" 
+      value={dateSelected}
+      id="datePicker"
+      name="log_date"
+      title="Select date to show log messages." 
+      hx-trigger="change"
+      hx-get="/api/getLogMessages"
+      hx-target="#logmessages"
+      hx-swap="innerHTML"
+    />
+	</form>
+</nav>
+<h1 class="font-bold text-indigo-500" id="updatedContent">No date selected.</h1>
+<script>
+    // Get references to the date picker and the content element
+    var datePicker = document.getElementById('datePicker');
+    var updatedContent = document.getElementById('updatedContent');
+
+    // Add an event listener for the change event on the date picker
+    datePicker.addEventListener('change', function() {
+        // Update the content with the selected date
+        updatedContent.innerText = 'Selected Date: ' + datePicker.value;
+    });
+</script>
+{% include "log_form.html" %} {% endblock %}

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+    <head>
+		    <meta charset="utf-8" />
+        <link href="/assets/main.css" rel="stylesheet" />
+        <link href="/assets/nav.css" rel="stylesheet" />
+        <link href="https://rsms.me/inter/inter.css" rel="stylesheet" />
+        <title>{% block title %}{{ title }}{% endblock %}</title>
+
+        <!-- htmx from the unpkg CDN - your mileage may vary -->
+        <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+
+        <!-- Allow any inheriting page to extend head with additional assets -->
+        {% block head %}{% endblock %}
+    </head>
+    <body class="mt-55">
+      <navheader>
+        <nav>
+            <a href="log_explorer">Log Explorer</a>
+            <a href="night_plan">Night Plan</a>
+            <a href="eon_report">End of Night Report</a>
+		        <a class="github" href="https://project.lsst.org" target="_blank" rel="noreferrer">
+			        Rubin Observatory Log Explorer
+		        </a>
+        </nav>
+      </navheader>
+      <innerbody id="content">
+            <!-- Inheriting pages will have their content rendered here, similar to app root in React, Angular, etc. -->
+            {% block content %}{% endblock %}
+      </innerbody>
+    </body>
+</html>
+

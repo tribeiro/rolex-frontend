@@ -1,0 +1,6 @@
+<p>There must be logs!</p>
+{% for log in logmessages %}
+<p>
+  {{ log|safe }}
+</p>
+{% endfor %}
