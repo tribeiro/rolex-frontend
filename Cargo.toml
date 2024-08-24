@@ -1,5 +1,5 @@
 [package]
-name = "rolex-fronted"
+name = "rolex-frontend"
 version = "0.1.0"
 edition = "2021"
 
