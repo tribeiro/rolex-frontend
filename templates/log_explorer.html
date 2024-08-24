@@ -5,7 +5,7 @@
 
 {% block content %}
 <nav aria-labelledby="current-page">
-	<form>
+  <forms>
 		Select a date to explore: 
 		<input 
       type="date" 
@@ -18,18 +18,178 @@
       hx-target="#logmessages"
       hx-swap="innerHTML"
     />
-	</form>
+  <button onclick="toggleLive()" class="btn" id="buttonLive">Live</button>
+  Filters:
+  <!-- 
+  <button class="btn"><i class="fa fa-info"></i></button>
+  <button class="btn"><i class="fa fa-exclamation-triangle"></i></button>
+  <button class="btn"><i class="fa fa-times-circle"></i></button>
+  <button class="btn"><i class="fa fa-cog"></i></button>
+  -->
+  <button onclick="toggleBlock()" title="Click to show/hide blocks." id="buttonToggleBlock"><i class="fa fa-delicious"></i></button>
+  <button onclick="toggleNarrativeLog()" title="Click to show/hide narrative logs." class="btn pressed" id="buttonToggleNarrativeLog"><i class="fa fa-user-circle"></i></button> 
+  <button onclick="toggleExposureLog()" title="Click to show/hide exposure logs." class="btn pressed" id="buttonToggleExposureLog"><i class="fa fa-image"></i></button>
+  <p>
+  Components: 
+  <input type="checkbox" value="AuxTel" title="Show AuxTel logs?" id="showAuxTel" checked> AuxTel
+  <input type="checkbox" value="MainTel" title="Show MainTel logs?" id="showMainTel" checked> MainTel
+  <input type="checkbox" value="LOVE" title="Show LOVE logs?" id="showLove" checked> LOVE 
+  </p>
+  </forms>
 </nav>
-<h1 class="font-bold text-indigo-500" id="updatedContent">No date selected.</h1>
+<h1 class="font-bold text-gray-85 text-center" id="updatedContent">No date selected.</h1>
 <script>
     // Get references to the date picker and the content element
     var datePicker = document.getElementById('datePicker');
     var updatedContent = document.getElementById('updatedContent');
+    var buttonToggleLive = document.getElementById('buttonLive');
+    var buttonToggleBlock = document.getElementById('buttonToggleBlock');
+    var buttonToggleNarrativeLog = document.getElementById('buttonToggleNarrativeLog');
+    var buttonToggleExposureLog = document.getElementById('buttonToggleExposureLog');
 
     // Add an event listener for the change event on the date picker
-    datePicker.addEventListener('change', function() {
+    datePicker.addEventListener('htmx:beforeRequest', function() {
         // Update the content with the selected date
-        updatedContent.innerText = 'Selected Date: ' + datePicker.value;
+      if (!buttonToggleLive.classList.contains("pressed")) {
+        updatedContent.innerText = 'Selected Date: ' + datePicker.value + ' [Loading...]';
+      } else {
+        updatedContent.innerText = "Live logging [Loading...]";
+      }
     });
+
+    datePicker.addEventListener('htmx:afterRequest', function(evt) {
+      if (!buttonToggleLive.classList.contains("pressed")) {
+        updatedContent.innerText = 'Selected Date: ' + datePicker.value;
+      } else {
+        updatedContent.innerText = "Live logging";
+      }
+    });
+
+    // Get the checkbox and the element to show/hide
+    var checkbox = document.getElementById('showAuxTel');
+    var checkboxMainTel = document.getElementById('showMainTel');
+    var checkboxLove = document.getElementById('showLove');
+
+    function toggleLive() {
+      console.log("toggling live updates.");
+      buttonToggleLive.classList.toggle('pressed');
+      datePicker.disabled = ! datePicker.disabled;
+      const today = new Date().toISOString().split('T')[0]; // Get today's date in yyyy-mm-dd format
+      datePicker.value = today;
+      if (!buttonToggleLive.classList.contains("pressed")) {
+        updatedContent.innerText = 'Selected Date: ' + datePicker.value;
+        console.log("Disabling pooling.");
+        datePicker.setAttribute('hx-trigger', 'change');
+      } else {
+        console.log('Pooling every 5s.');
+        updatedContent.innerText = "Live logging";
+        datePicker.setAttribute('hx-trigger', 'load, every 5s'); // Start polling every 5 seconds
+      }
+      htmx.process(datePicker);
+    }
+
+    function toggleBlock() {
+      buttonToggleBlock.classList.toggle('pressed');
+
+      var elements = document.querySelectorAll(".block_item");
+        elements.forEach(function(element) {
+            if (buttonToggleBlock.classList.contains("pressed") && (element.classList.contains("AuxTel") && checkbox.checked)) {
+                element.style.display = "block";
+            } else {
+                element.style.display = "none";
+            }
+        });
+    }
+
+    function toggleNarrativeLog() {
+      buttonToggleNarrativeLog.classList.toggle('pressed');
+
+      var elements = document.querySelectorAll(".narrativeLog");
+        elements.forEach(function(element) {
+            if (
+                buttonToggleNarrativeLog.classList.contains("pressed") && 
+                (
+                  (element.classList.contains("AuxTel") && checkbox.checked) ||
+                  (element.classList.contains("MainTel") && checkboxMainTel.checked) ||
+                  (element.classList.contains("LOVE") && checkboxLove.checked)
+                )
+            ) {
+                element.style.display = "block";
+            } else {
+                element.style.display = "none";
+            }
+        });
+    }
+
+    function toggleExposureLog() {
+      buttonToggleExposureLog.classList.toggle('pressed');
+
+      var elements = document.querySelectorAll(".exposureLog");
+        elements.forEach(function(element) {
+            if (
+                buttonToggleExposureLog.classList.contains("pressed") && 
+                (
+                  (element.classList.contains("LATISS") && checkbox.checked) ||
+                  (element.classList.contains("MainTel") && checkboxMainTel.checked) ||
+                  (element.classList.contains("LOVE") && checkboxLove.checked)
+                )
+            ) {
+                element.style.display = "block";
+            } else {
+                element.style.display = "none";
+            }
+        });
+    }
+
+    // Function to toggle the visibility based on checkbox state
+    function toggleAuxTel() {
+      var elements = document.querySelectorAll(".AuxTel");
+      elements.forEach(function(element) {
+      if (
+        checkbox.checked &&
+        (
+          (element.classList.contains("narrativeLog") && buttonToggleNarrativeLog.classList.contains("pressed")) ||
+          (element.classList.contains("block_item") && buttonToggleBlock.classList.contains("pressed"))
+        )
+      ) {
+            element.style.display = 'block'; // Show the content
+        } else {
+            element.style.display = 'none'; // Hide the content
+        }
+      });
+    }
+
+    // Function to toggle the visibility based on checkbox state
+    function toggleMainTel() {
+      var elements = document.querySelectorAll(".MainTel");
+      elements.forEach(function(element) {
+        if (checkboxMainTel.checked) {
+            element.style.display = 'block'; // Show the content
+        } else {
+            element.style.display = 'none'; // Hide the content
+        }
+      });
+    }
+
+    function toggleLove() {
+      var elements = document.querySelectorAll(".LOVE");
+      elements.forEach(function(element) {
+        if (checkboxLove.checked) {
+            element.style.display = 'block'; // Show the content
+        } else {
+            element.style.display = 'none'; // Hide the content
+        }
+      });
+    }
+
+    // Add an event listener to the checkbox
+    checkbox.addEventListener('change', toggleAuxTel);
+    checkboxMainTel.addEventListener('change', toggleMainTel);
+    checkboxLove.addEventListener('change', toggleLove);
+
+    // Initial call to set the correct state
+    toggleAuxTel();
+    toggleMainTel();
+    toggleLove();
 </script>
 {% include "log_form.html" %} {% endblock %}
