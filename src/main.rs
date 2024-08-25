@@ -33,6 +33,8 @@ async fn main() -> anyhow::Result<()> {
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
 
+    println!("Starting ROLEx server.");
+
     axum::serve(listener, app).await.unwrap();
 
     Ok(())
