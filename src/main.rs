@@ -46,6 +46,7 @@ struct LogExplorerQuery {
 }
 
 async fn handler() -> impl IntoResponse {
+    println!("Sending welcome page.");
     let template = HelloTemplate {};
     HtmlTemplate(template)
 }
