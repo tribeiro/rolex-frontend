@@ -2,7 +2,7 @@ use askama::Template;
 use axum::{
     extract::Query,
     http::StatusCode,
-    response::{Html, IntoResponse},
+    response::{Html, IntoResponse, Redirect},
     routing::get,
     Router,
 };
@@ -20,14 +20,15 @@ async fn main() -> anyhow::Result<()> {
     let api_router = Router::new().route("/getLogMessages", get(get_log_messages));
 
     let app = Router::new()
-        .nest("/api", api_router)
-        .route("/", get(handler))
-        .route("/log_explorer_app", get(log_explorer_app))
-        .route("/log_explorer", get(log_explorer))
-        .route("/night_plan", get(night_plan))
-        .route("/eon_report", get(eon_report))
+        .nest("/rolex2/api", api_router)
+        .route("/", get(|| async { Redirect::permanent("/rolex2") }))
+        .route("/rolex2", get(handler))
+        .route("/rolex2/log_explorer_app", get(log_explorer_app))
+        .route("/rolex2/log_explorer", get(log_explorer))
+        .route("/rolex2/night_plan", get(night_plan))
+        .route("/rolex2/eon_report", get(eon_report))
         .nest_service(
-            "/assets",
+            "/rolex2/assets",
             ServeDir::new(format!("{}/assets", assets_path.to_str().unwrap())),
         );
 
