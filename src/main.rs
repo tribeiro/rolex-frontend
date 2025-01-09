@@ -11,7 +11,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use tower_http::services::ServeDir;
 
-use chrono::{Duration, NaiveDateTime};
+use chrono::{Duration, NaiveDateTime, NaiveTime, Utc};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -34,6 +34,8 @@ async fn main() -> anyhow::Result<()> {
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
 
+    println!("Starting ROLEx server.");
+
     axum::serve(listener, app).await.unwrap();
 
     Ok(())
@@ -45,6 +47,7 @@ struct LogExplorerQuery {
 }
 
 async fn handler() -> impl IntoResponse {
+    println!("Sending welcome page.");
     let template = HelloTemplate {};
     HtmlTemplate(template)
 }
@@ -90,7 +93,25 @@ async fn get_log_messages(Query(params): Query<HashMap<String, String>>) -> impl
         let template = get_log_form(&selected_date).await;
         HtmlTemplate(template)
     } else {
-        get_empty_log_form()
+        let now = Utc::now();
+        if let Some(day_transition) = NaiveTime::from_hms_opt(12, 0, 0) {
+            println!("No log_date parameter in query. Assuming live logging.");
+            let time = now.time();
+            let date_formatted = {
+                if time > day_transition {
+                    // Today
+                    format!("{}", now.date_naive().format("%Y-%m-%d"))
+                } else {
+                    // Yesterday
+                    let yesterday = now.date_naive() - Duration::days(1);
+                    format!("{}", yesterday.format("%Y-%m-%d"))
+                }
+            };
+            let template = get_log_form(&date_formatted).await;
+            HtmlTemplate(template)
+        } else {
+            get_empty_log_form()
+        }
     }
 }
 
