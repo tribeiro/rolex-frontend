@@ -56,11 +56,13 @@ async fn log_explorer(Query(query): Query<LogExplorerQuery>) -> impl IntoRespons
     println!("Log Date: {:?}", query.log_date);
     let log_form = {
         if let Some(selected_date) = &query.log_date {
-            let log_form = get_log_form(&selected_date).await;
+            let log_form = get_log_form(&selected_date, &None).await;
             log_form
         } else {
             LogForm {
                 logmessages: vec![],
+                last_entry_date: "Invalid Date".to_owned(),
+                last_entry_time: "".to_owned(),
             }
         }
     };
@@ -90,7 +92,7 @@ async fn get_log_messages(Query(params): Query<HashMap<String, String>>) -> impl
     println!("{params:?}");
 
     if let Some(selected_date) = params.get("log_date") {
-        let template = get_log_form(&selected_date).await;
+        let template = get_log_form(&selected_date, &None).await;
         HtmlTemplate(template)
     } else {
         let now = Utc::now();
@@ -107,7 +109,14 @@ async fn get_log_messages(Query(params): Query<HashMap<String, String>>) -> impl
                     format!("{}", yesterday.format("%Y-%m-%d"))
                 }
             };
-            let template = get_log_form(&date_formatted).await;
+            let log_time = {
+                if let Some(log_time) = params.get("log_time") {
+                    Some(log_time.as_str())
+                } else {
+                    None
+                }
+            };
+            let template = get_log_form(&date_formatted, &log_time).await;
             HtmlTemplate(template)
         } else {
             get_empty_log_form()
@@ -115,14 +124,27 @@ async fn get_log_messages(Query(params): Query<HashMap<String, String>>) -> impl
     }
 }
 
-async fn get_log_form(selected_date: &str) -> LogForm {
-    let updated_content = format!("Content updated for date: {selected_date}");
-
-    println!("{updated_content}");
-
+async fn get_log_form(selected_date: &str, start_time: &Option<&str>) -> LogForm {
     let parse_from_str = NaiveDateTime::parse_from_str;
+    let (start_time, last_entry_time) = {
+        if let Some(last_entry_time) = start_time {
+            if let Ok(start_time) = parse_from_str(last_entry_time, "%Y-%m-%dT%H:%M:%S%.f") {
+                (Ok(start_time), last_entry_time.to_string())
+            } else {
+                (
+                    parse_from_str(&format!("{selected_date}T12:00:00"), "%Y-%m-%dT%H:%M:%S"),
+                    last_entry_time.to_string(),
+                )
+            }
+        } else {
+            (
+                parse_from_str(&format!("{selected_date}T12:00:00"), "%Y-%m-%dT%H:%M:%S"),
+                format!("{selected_date}T12:00:00"),
+            )
+        }
+    };
 
-    match parse_from_str(&format!("{selected_date}T12:00:00"), "%Y-%m-%dT%H:%M:%S") {
+    match start_time {
         Ok(min_date_added) => {
             let max_date_added = min_date_added + Duration::days(1);
             let params = Some(HashMap::from([
@@ -191,8 +213,31 @@ async fn get_log_form(selected_date: &str) -> LogForm {
                 logmessages.reverse();
                 logmessages
             };
+            let last_entry_time = {
+                if logmessages.is_empty() {
+                    last_entry_time
+                } else {
+                    let last_entry_time = logmessages
+                        .get(0)
+                        .unwrap_or(&("".to_string(), "".to_string()))
+                        .0
+                        .replace("Z", "");
+                    if let Ok(last_entry_time) =
+                        parse_from_str(&last_entry_time, "%Y-%m-%dT%H:%M:%S%.f")
+                    {
+                        let new_last_entry_time = last_entry_time + Duration::milliseconds(100);
+                        new_last_entry_time
+                            .format("%Y-%m-%dT%H:%M:%S%.f")
+                            .to_string()
+                    } else {
+                        last_entry_time
+                    }
+                }
+            };
             let template = LogForm {
                 logmessages: logmessages.into_iter().map(|(_, entry)| entry).collect(),
+                last_entry_time,
+                last_entry_date: selected_date.to_owned(),
             };
             return template;
         }
@@ -200,6 +245,8 @@ async fn get_log_form(selected_date: &str) -> LogForm {
             println!("Error parsing selected date: {selected_date}. Err: {error}");
             return LogForm {
                 logmessages: vec![],
+                last_entry_time: "".to_owned(),
+                last_entry_date: selected_date.to_owned(),
             };
         }
     }
@@ -208,6 +255,8 @@ async fn get_log_form(selected_date: &str) -> LogForm {
 fn get_empty_log_form() -> HtmlTemplate<LogForm> {
     let template = LogForm {
         logmessages: vec![],
+        last_entry_time: "".to_owned(),
+        last_entry_date: "".to_owned(),
     };
     HtmlTemplate(template)
 }
@@ -239,6 +288,8 @@ struct EndOfNightReportTemplate;
 #[template(path = "log_list.html")]
 struct LogForm {
     logmessages: Vec<String>,
+    last_entry_time: String,
+    last_entry_date: String,
 }
 
 struct HtmlTemplate<T>(T);
