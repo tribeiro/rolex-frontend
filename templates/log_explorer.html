@@ -32,7 +32,7 @@
   <p>
   Components: 
   <input type="checkbox" value="AuxTel" title="Show AuxTel logs?" id="showAuxTel" checked> AuxTel
-  <input type="checkbox" value="MainTel" title="Show MainTel logs?" id="showMainTel" checked> MainTel
+  <input type="checkbox" value="Simonyi" title="Show Simonyi logs?" id="showSimonyi" checked> Simonyi
   <input type="checkbox" value="LOVE" title="Show LOVE logs?" id="showLove" checked> LOVE 
   </p>
   </forms>
@@ -67,7 +67,7 @@
 
     // Get the checkbox and the element to show/hide
     var checkbox = document.getElementById('showAuxTel');
-    var checkboxMainTel = document.getElementById('showMainTel');
+    var checkboxSimonyi = document.getElementById('showSimonyi');
     var checkboxLove = document.getElementById('showLove');
 
     function toggleLive() {
@@ -110,7 +110,7 @@
                 buttonToggleNarrativeLog.classList.contains("pressed") && 
                 (
                   (element.classList.contains("AuxTel") && checkbox.checked) ||
-                  (element.classList.contains("MainTel") && checkboxMainTel.checked) ||
+                  (element.classList.contains("Simonyi") && checkboxSimonyi.checked) ||
                   (element.classList.contains("LOVE") && checkboxLove.checked)
                 )
             ) {
@@ -130,7 +130,7 @@
                 buttonToggleExposureLog.classList.contains("pressed") && 
                 (
                   (element.classList.contains("LATISS") && checkbox.checked) ||
-                  (element.classList.contains("MainTel") && checkboxMainTel.checked) ||
+                  (element.classList.contains("Simonyi") && checkboxSimonyi.checked) ||
                   (element.classList.contains("LOVE") && checkboxLove.checked)
                 )
             ) {
@@ -160,10 +160,10 @@
     }
 
     // Function to toggle the visibility based on checkbox state
-    function toggleMainTel() {
-      var elements = document.querySelectorAll(".MainTel");
+    function toggleSimonyi() {
+      var elements = document.querySelectorAll(".Simonyi");
       elements.forEach(function(element) {
-        if (checkboxMainTel.checked) {
+        if (checkboxSimonyi.checked) {
             element.style.display = 'block'; // Show the content
         } else {
             element.style.display = 'none'; // Hide the content
@@ -184,12 +184,12 @@
 
     // Add an event listener to the checkbox
     checkbox.addEventListener('change', toggleAuxTel);
-    checkboxMainTel.addEventListener('change', toggleMainTel);
+    checkboxSimonyi.addEventListener('change', toggleSimonyi);
     checkboxLove.addEventListener('change', toggleLove);
 
     // Initial call to set the correct state
     toggleAuxTel();
-    toggleMainTel();
+    toggleSimonyi();
     toggleLove();
 </script>
 {% include "log_form.html" %} {% endblock %}
