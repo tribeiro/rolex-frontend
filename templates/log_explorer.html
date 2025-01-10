@@ -90,7 +90,10 @@
 
     function toggleBlock() {
       buttonToggleBlock.classList.toggle('pressed');
+      handleBlockDisplay();
+    }
 
+    function handleBlockDisplay() {
       var elements = document.querySelectorAll(".block_item");
         elements.forEach(function(element) {
             if (buttonToggleBlock.classList.contains("pressed") && (element.classList.contains("AuxTel") && checkbox.checked)) {
@@ -103,7 +106,10 @@
 
     function toggleNarrativeLog() {
       buttonToggleNarrativeLog.classList.toggle('pressed');
+      handleNarrativeLogDisplay();
+    }
 
+    function handleNarrativeLogDisplay() {
       var elements = document.querySelectorAll(".narrativeLog");
         elements.forEach(function(element) {
             if (
@@ -123,7 +129,10 @@
 
     function toggleExposureLog() {
       buttonToggleExposureLog.classList.toggle('pressed');
+      handleExposureLogDisplay();
+    }
 
+    function handleExposureLogDisplay() {
       var elements = document.querySelectorAll(".exposureLog");
         elements.forEach(function(element) {
             if (
