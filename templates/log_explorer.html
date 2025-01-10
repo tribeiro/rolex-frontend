@@ -17,6 +17,7 @@
       hx-get="/rolex2/api/getLogMessages"
       hx-target="#logmessages"
       hx-swap="innerHTML"
+      hx-vals='{"log_time": "12:00:00"}'
     />
   <button onclick="toggleLive()" class="btn" id="buttonLive">Live</button>
   Filters:
@@ -46,6 +47,8 @@
     var buttonToggleBlock = document.getElementById('buttonToggleBlock');
     var buttonToggleNarrativeLog = document.getElementById('buttonToggleNarrativeLog');
     var buttonToggleExposureLog = document.getElementById('buttonToggleExposureLog');
+    var _lastEntryTime = null;
+    var _lastEntryDate = null;
 
     // Add an event listener for the change event on the date picker
     datePicker.addEventListener('htmx:beforeRequest', function() {
@@ -59,9 +62,14 @@
 
     datePicker.addEventListener('htmx:afterRequest', function(evt) {
       if (!buttonToggleLive.classList.contains("pressed")) {
-        updatedContent.innerText = 'Selected Date: ' + datePicker.value;
+        updatedContent.innerText = 'Selected Date: ' + getQueryTime();
       } else {
         updatedContent.innerText = "Live logging";
+        _lastEntryTime = document.getElementById("lastEntryTime").getAttribute("value");
+        _lastEntryDate = document.getElementById("lastEntryDate").getAttribute("value");
+        let logTime = JSON.stringify({ log_time: _lastEntryTime });
+        console.log(logTime);
+        datePicker.setAttribute("hx-vals", logTime);
       }
     });
 
@@ -70,20 +78,37 @@
     var checkboxSimonyi = document.getElementById('showSimonyi');
     var checkboxLove = document.getElementById('showLove');
 
+    function getQueryTime() {
+      console.log(_lastEntryDate + "T" + _lastEntryTime);
+      let lastEntryDate = _lastEntryDate !== null ? _lastEntryDate : datePicker.value;
+      let lastEntryTime = _lastEntryTime !== null ? _lastEntryTime : "12:00:00"
+      return lastEntryDate + "T" + lastEntryTime;
+    }
+
     function toggleLive() {
       console.log("toggling live updates.");
       buttonToggleLive.classList.toggle('pressed');
       datePicker.disabled = ! datePicker.disabled;
       const today = new Date().toISOString().split('T')[0]; // Get today's date in yyyy-mm-dd format
       datePicker.value = today;
+      console.log(today);
       if (!buttonToggleLive.classList.contains("pressed")) {
         updatedContent.innerText = 'Selected Date: ' + datePicker.value;
         console.log("Disabling pooling.");
+        _lastEntryTime = null;
+        _lastEntryDate = null;
+        datePicker.setAttribute("hx-vals", JSON.stringify({ log_time: "12:00:00"}));
         datePicker.setAttribute('hx-trigger', 'change');
+        datePicker.setAttribute('hx-swap', "innerHTML");
       } else {
         console.log('Pooling every 5s.');
+        const target = document.querySelector("#logmessages");
+        if (target) {
+            target.innerHTML = ""; // Clear content
+        }
         updatedContent.innerText = "Live logging";
         datePicker.setAttribute('hx-trigger', 'load, every 5s'); // Start polling every 5 seconds
+        datePicker.setAttribute('hx-swap', "afterbegin");
       }
       htmx.process(datePicker);
     }
