@@ -117,7 +117,8 @@
                 (
                   (element.classList.contains("AuxTel") && checkbox.checked) ||
                   (element.classList.contains("Simonyi") && checkboxSimonyi.checked) ||
-                  (element.classList.contains("LOVE") && checkboxLove.checked)
+                  (element.classList.contains("LOVE") && checkboxLove.checked) ||
+                  !(element.classList.contains("AuxTel") || element.classList.contains("Simonyi") || element.classList.contains("LOVE"))
                 )
             ) {
                 element.style.display = "block";
