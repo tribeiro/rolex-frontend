@@ -35,6 +35,7 @@
   <input type="checkbox" value="AuxTel" title="Show AuxTel logs?" id="showAuxTel" checked> AuxTel
   <input type="checkbox" value="Simonyi" title="Show Simonyi logs?" id="showSimonyi" checked> Simonyi
   <input type="checkbox" value="LOVE" title="Show LOVE logs?" id="showLove" checked> LOVE 
+  <input type="checkbox" value="Done Scripts" title="Show done scripts?" id="showDoneScripts"> Done Scripts
   </p>
   </forms>
 </nav>
@@ -77,6 +78,7 @@
     var checkbox = document.getElementById('showAuxTel');
     var checkboxSimonyi = document.getElementById('showSimonyi');
     var checkboxLove = document.getElementById('showLove');
+    var checkboxDoneScripts = document.getElementById('showDoneScripts');
 
     function getQueryTime() {
       console.log(_lastEntryDate + "T" + _lastEntryTime);
@@ -217,10 +219,62 @@
       });
     }
 
+    function getScriptInfo(salIndex, timestamp) {
+      console.log(`Get script info for ${salIndex}.`);
+      const button = document.getElementById(`buttonGetInfo${salIndex}`);
+      button.style.display = 'none';
+      const targetElement = document.getElementById(salIndex);
+      const baseUrl = "/rolex2/api/getScriptInfo"
+      const queryParams = new URLSearchParams({
+        sal_index: salIndex,
+        timestamp: timestamp
+      });
+
+      // Construct the full URL with the query string
+      const fullUrl = `${baseUrl}?${queryParams.toString()}`;
+
+      // Trigger the "htmx:get" manually
+      htmx.ajax("GET", fullUrl, {
+        target: targetElement,
+        swap: "afterend",
+      });
+    }
+
+    function toggleDoneScriptsDisplay() {
+      var elements = document.querySelectorAll(".availableScript.Done");
+        elements.forEach(function(element) {
+            if (
+                checkboxDoneScripts.checked
+            ) {
+                element.style.display = "block";
+            } else {
+                element.style.display = "none";
+            }
+        });
+    }
+
+    function toggleCollapse(salIndex) {
+      console.log(`toggleCollapse ${salIndex}...`);
+
+      const element = document.getElementById(`span${salIndex}`);
+      const button = document.getElementById(`collapse${salIndex}`);
+
+      if (element.style.maxHeight) {
+        console.log("Expanding...");
+        element.style.removeProperty("max-height");
+        button.innerText = "Show less"
+      } else {
+        console.log("Collapsing...");
+        element.style.maxHeight = "100px"; // Collapse
+        button.innerText = "Show more"
+      }
+    }
+
     // Add an event listener to the checkbox
     checkbox.addEventListener('change', toggleAuxTel);
     checkboxSimonyi.addEventListener('change', toggleSimonyi);
     checkboxLove.addEventListener('change', toggleLove);
+    checkboxDoneScripts.addEventListener('change', toggleDoneScriptsDisplay);
 
     // Initial call to set the correct state
     toggleAuxTel();
