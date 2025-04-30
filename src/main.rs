@@ -6,7 +6,7 @@ use axum::{
     routing::get,
     Router,
 };
-use rolex::{block_log::block_log, exposure_log::exposure_log, narrative_log::narrative_log};
+use rolex::{exposure_log::exposure_log, narrative_log::narrative_log};
 use serde::Deserialize;
 use std::collections::HashMap;
 use tower_http::services::ServeDir;
@@ -172,10 +172,6 @@ async fn get_log_form(selected_date: &str, start_time: &Option<&str>) -> LogForm
 
             println!("Got {} exposure logs.", exposure_logs.len());
 
-            let block_logs =
-                block_log::BlockLog::retrieve("summit_efd", &min_date_added, &max_date_added)
-                    .await
-                    .unwrap_or(vec![]);
 
             let logmessages: Vec<(String, String)> = {
                 let mut logmessages: Vec<(String, String)> = narrative_logs
@@ -197,14 +193,6 @@ async fn get_log_form(selected_date: &str, start_time: &Option<&str>) -> LogForm
                             entry
                                 .render()
                                 .unwrap_or("Failed to render message.".to_string()),
-                        )
-                    }))
-                    .chain(block_logs.into_iter().map(|entry| {
-                        (
-                            entry.get_date_added().to_string(),
-                            entry
-                                .render()
-                                .unwrap_or("Failed to render block message.".to_string()),
                         )
                     }))
                     .collect();
