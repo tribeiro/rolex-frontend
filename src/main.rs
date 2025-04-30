@@ -6,7 +6,14 @@ use axum::{
     routing::get,
     Router,
 };
-use rolex::{exposure_log::exposure_log, narrative_log::narrative_log};
+use rolex::{
+    exposure_log::exposure_log,
+    narrative_log::narrative_log,
+    sal_script_info::{
+        available_scripts::{self, AvailableScript},
+        sal_script_info::SalScriptInfo,
+    },
+};
 use serde::Deserialize;
 use std::collections::HashMap;
 use tower_http::services::ServeDir;
@@ -27,6 +34,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/rolex2/log_explorer", get(log_explorer))
         .route("/rolex2/night_plan", get(night_plan))
         .route("/rolex2/eon_report", get(eon_report))
+        .route("/rolex2/api/getScriptInfo", get(get_script_info))
         .nest_service(
             "/rolex2/assets",
             ServeDir::new(format!("{}/assets", assets_path.to_str().unwrap())),
@@ -124,6 +132,30 @@ async fn get_log_messages(Query(params): Query<HashMap<String, String>>) -> impl
     }
 }
 
+async fn get_script_info(Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
+    println!("{params:?}");
+    if let (Some(sal_index), Some(timestamp)) = (params.get("sal_index"), params.get("timestamp")) {
+        let template = {
+            if let Ok(sal_index) = sal_index.trim().parse() {
+                let available_script = AvailableScript {
+                    sal_index,
+                    timestamp: timestamp.to_string(),
+                    ..Default::default()
+                };
+                SalScriptInfo::retrieve("summit_efd", &available_script)
+                    .await
+                    .unwrap_or(SalScriptInfo::default())
+            } else {
+                SalScriptInfo::default()
+            }
+        };
+        HtmlTemplate(template)
+    } else {
+        let template = SalScriptInfo::default();
+        HtmlTemplate(template)
+    }
+}
+
 async fn get_log_form(selected_date: &str, start_time: &Option<&str>) -> LogForm {
     let parse_from_str = NaiveDateTime::parse_from_str;
     let (start_time, last_entry_time) = {
@@ -172,6 +204,23 @@ async fn get_log_form(selected_date: &str, start_time: &Option<&str>) -> LogForm
 
             println!("Got {} exposure logs.", exposure_logs.len());
 
+            let available_scripts: Vec<available_scripts::AvailableScript> =
+                available_scripts::AvailableScript::retrieve(
+                    "summit_efd",
+                    &min_date_added,
+                    &max_date_added,
+                )
+                .await
+                .unwrap_or(vec![])
+                .into_iter()
+                .filter_map(|available_script| {
+                    if available_script.is_final() {
+                        Some(available_script)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
 
             let logmessages: Vec<(String, String)> = {
                 let mut logmessages: Vec<(String, String)> = narrative_logs
@@ -193,6 +242,14 @@ async fn get_log_form(selected_date: &str, start_time: &Option<&str>) -> LogForm
                             entry
                                 .render()
                                 .unwrap_or("Failed to render message.".to_string()),
+                        )
+                    }))
+                    .chain(available_scripts.into_iter().map(|entry| {
+                        (
+                            entry.get_date_added().to_string(),
+                            entry
+                                .render()
+                                .unwrap_or("Failed to render block message.".to_string()),
                         )
                     }))
                     .collect();
